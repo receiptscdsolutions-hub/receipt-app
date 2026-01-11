@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
   <link rel="icon" type="image/png" href="/icon-192.png">
+  <link rel="manifest" href="/manifest.json">
   <title>Receipt Upload</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -67,16 +68,63 @@
     const clearBtn = document.getElementById('clearBtn');
     const status = document.getElementById('status');
     let selectedFile = null;
-    captureBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => {
+
+    captureBtn.addEventListener('click', function() {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
         selectedFile = file;
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = function(e) {
           preview.src = e.target.result;
           preview.style.display = 'block';
           placeholder.style.display = 'none';
           clearBtn.style.display = 'flex';
           previewArea.classList.add('has-image');
           sendBtn.disabled = false;
+          status.className = 'status';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    clearBtn.addEventListener('click', function() {
+      selectedFile = null;
+      fileInput.value = '';
+      preview.style.display = 'none';
+      placeholder.style.display = 'flex';
+      clearBtn.style.display = 'none';
+      previewArea.classList.remove('has-image');
+      sendBtn.disabled = true;
+      status.className = 'status';
+    });
+
+    sendBtn.addEventListener('click', async function() {
+      if (!selectedFile) return;
+      sendBtn.disabled = true;
+      status.className = 'status sending';
+      status.textContent = 'Sending...';
+      const formData = new FormData();
+      formData.append('receipt', selectedFile);
+      try {
+        const response = await fetch('/upload', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (response.ok) {
+          status.className = 'status success';
+          status.textContent = '✓ Receipt sent successfully!';
+          setTimeout(function() { clearBtn.click(); }, 2000);
+        } else {
+          throw new Error(result.error || 'Upload failed');
+        }
+      } catch (error) {
+        status.className = 'status error';
+        status.textContent = '✕ ' + error.message;
+        sendBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
