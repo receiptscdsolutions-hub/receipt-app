@@ -71,5 +71,5 @@ app.post('/upload', upload.single('receipt'), async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log`Receipt app running on http://localhost:${PORT}`);
+  console.log(`Receipt app running on http://localhost:${PORT}`);
 });
